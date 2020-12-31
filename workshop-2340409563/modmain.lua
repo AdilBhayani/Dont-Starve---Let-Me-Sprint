@@ -1,15 +1,17 @@
+local G = GLOBAL
 local isSprinting = 0
-local initialHungerRate
+local sprintKey = G["KEY_" .. GetModConfigData("sprintBind")]
 
 local function sprint(player)
     player.components.locomotor:SetExternalSpeedMultiplier(player, "speedmeup", GetModConfigData("sprintSpeed"))
-    initialHungerRate = player.components.hunger.hungerrate
+    local initialHungerRate = player.components.hunger.hungerrate
     player.components.hunger:SetRate(initialHungerRate * GetModConfigData("hungerDrain"))
 end
 
 local function revertSprint(player)
     player.components.locomotor:SetExternalSpeedMultiplier(player, "speedmeup", 1.0)
-    player.components.hunger:SetRate(initialHungerRate)
+    local initialHungerRate = player.components.hunger.hungerrate
+    player.components.hunger:SetRate(initialHungerRate / GetModConfigData("hungerDrain"))
 end
 
 AddModRPCHandler(modname, "dsiRemoteSprint", function(player, modVersion)
@@ -20,34 +22,50 @@ AddModRPCHandler(modname, "dsiRemoteRevertSprint", function(player, modVersion)
     revertSprint(player)
 end)
 
---- Press "R" to sprint.
-GLOBAL.TheInput:AddKeyDownHandler(114, function()
-    if not (GLOBAL.TheFrontEnd:GetActiveScreen() and GLOBAL.TheFrontEnd:GetActiveScreen().name and
-        type(GLOBAL.TheFrontEnd:GetActiveScreen().name) == "string" and GLOBAL.TheFrontEnd:GetActiveScreen().name ==
-        "HUD") then
+--- Key pressed - begin sprinting.
+G.TheInput:AddKeyDownHandler(sprintKey, function()
+    if not (G.TheFrontEnd:GetActiveScreen() and G.TheFrontEnd:GetActiveScreen().name and
+        type(G.TheFrontEnd:GetActiveScreen().name) == "string" and G.TheFrontEnd:GetActiveScreen().name == "HUD") then
         return
     end
 
-    local modVersion = GLOBAL.KnownModIndex:GetModInfo(modname).version
+    local modVersion = G.KnownModIndex:GetModInfo(modname).version
 
     -- Server-side
-    if GLOBAL.TheNet:GetIsServer() then
-        print('in main function')
-        if (isSprinting == 1) then
-            isSprinting = 0
-            revertSprint(GLOBAL.ThePlayer)
-        else
+    if G.TheNet:GetIsServer() then
+        if (isSprinting == 0) then
             isSprinting = 1
-            sprint(GLOBAL.ThePlayer)
+            sprint(G.ThePlayer)
         end
         -- Client-side
+    else
+        if (isSprinting == 0) then
+            isSprinting = 1
+            SendModRPCToServer(MOD_RPC[modname]["dsiRemoteSprint"], modVersion)
+        end
+    end
+end)
+
+--- Key released - stop sprinting.
+G.TheInput:AddKeyUpHandler(sprintKey, function()
+    if not (G.TheFrontEnd:GetActiveScreen() and G.TheFrontEnd:GetActiveScreen().name and
+        type(G.TheFrontEnd:GetActiveScreen().name) == "string" and G.TheFrontEnd:GetActiveScreen().name == "HUD") then
+        return
+    end
+    local modVersion = G.KnownModIndex:GetModInfo(modname).version
+
+    -- Server-side
+    if G.TheNet:GetIsServer() then
+        if (isSprinting == 1) then
+            isSprinting = 0
+            revertSprint(G.ThePlayer)
+        end
+        --- Client-side
     else
         if (isSprinting == 1) then
             isSprinting = 0
             SendModRPCToServer(MOD_RPC[modname]["dsiRemoteRevertSprint"], modVersion)
-        else
-            isSprinting = 1
-            SendModRPCToServer(MOD_RPC[modname]["dsiRemoteSprint"], modVersion)
         end
+
     end
 end)

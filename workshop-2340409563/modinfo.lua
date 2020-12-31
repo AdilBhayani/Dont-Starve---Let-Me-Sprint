@@ -1,7 +1,7 @@
 name = "Let me sprint!"
-description = "Press R to toggle sprint"
+description = "Hold LSHIFT (Configurable) to sprint at the cost of increased hunger drain"
 author = "Dilathekila"
-version = "0.0.2"
+version = "1.0.0"
 
 forumthread = ""
 
@@ -22,13 +22,26 @@ priority = 0
 icon_atlas = "preview.xml"
 icon = "preview.tex"
 
+local keys = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
+              "V", "W", "X", "Y", "Z", "TAB", "LSHIFT", "CAPSLOCK", "LALT", "LCTRL", "BACKSPACE", "PERIOD", "SLASH",
+              "TILDE"}
+
 configuration_options = {{
+    name = "sprintBind",
+    label = "Sprint keybind",
+    hover = "Holding this key will allow you to sprint.",
+    options = {},
+    default = "LSHIFT"
+}, {
     name = "sprintSpeed",
     label = "Sprint Speed Multiplier",
     hover = "How much faster you move when sprinting",
     options = {{
         description = "1x",
         data = 1
+    }, {
+        description = "1.1x",
+        data = 1.1
     }, {
         description = "1.25x",
         data = 1.25
@@ -45,7 +58,7 @@ configuration_options = {{
         description = "3x - warranty void",
         data = 3
     }},
-    default = 1.25
+    default = 1.5
 }, {
     name = "hungerDrain",
     label = "Hunger Drain Multiplier",
@@ -69,5 +82,12 @@ configuration_options = {{
         description = "5x",
         data = 5
     }},
-    default = 2
+    default = 3
 }}
+
+for i = 1, #keys, 1 do
+    configuration_options[1].options[i] = {
+        description = keys[i],
+        data = keys[i]
+    }
+end
