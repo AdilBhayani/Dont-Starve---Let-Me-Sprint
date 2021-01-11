@@ -33,6 +33,18 @@ configuration_options = {{
     options = {},
     default = "LSHIFT"
 }, {
+    name = "mouseEnabled",
+    label = "Enable sprint with middle mouse?",
+    hover = "Enabling this will allow you to sprint with the middle mouse button in addition to Sprint keybind",
+    options = {{
+        description = "Enabled",
+        data = 1
+    }, {
+        description = "Disabled",
+        data = 0
+    }},
+    default = 0
+}, {
     name = "sprintSpeed",
     label = "Sprint Speed Multiplier",
     hover = "How much faster you move when sprinting",
