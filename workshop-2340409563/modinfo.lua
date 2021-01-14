@@ -1,7 +1,7 @@
 name = "Let me sprint!"
 description = "Hold LSHIFT (Configurable) to sprint at the cost of increased hunger drain"
 author = "Dilathekila"
-version = "1.0.0"
+version = "2.0.0"
 
 forumthread = ""
 
@@ -83,6 +83,60 @@ configuration_options = {{
         data = 5
     }},
     default = 3
+}, {
+    name = "hungerThreshold",
+    label = "Hunger Threshold",
+    hover = "Minimum hunger threshold at which you are allowed to sprint",
+    options = {{
+        description = "0%",
+        data = 0
+    }, {
+        description = "5%",
+        data = 5
+    }, {
+        description = "10%",
+        data = 10
+    }, {
+        description = "15%",
+        data = 15
+    }, {
+        description = "20%",
+        data = 20
+    }, {
+        description = "25%",
+        data = 25
+    }, {
+        description = "30%",
+        data = 30
+    }, {
+        description = "35%",
+        data = 35
+    }, {
+        description = "40%",
+        data = 40
+    }, {
+        description = "45%",
+        data = 45
+    }, {
+        description = "50%",
+        data = 50
+    }, {
+        description = "55%",
+        data = 55
+    }, {
+        description = "60%",
+        data = 60
+    }, {
+        description = "65%",
+        data = 65
+    }, {
+        description = "70%",
+        data = 70
+    }, {
+        description = "75%",
+        data = 75
+    }},
+    default = 25
 }}
 
 for i = 1, #keys, 1 do

@@ -1,6 +1,8 @@
 local G = GLOBAL
-local isSprinting = 0
+local playerStatus = {}
+local hungerThreshold = GetModConfigData("hungerThreshold")
 local sprintKey = G["KEY_" .. GetModConfigData("sprintBind")]
+print('Sprint key is', sprintKey)
 
 local function sprint(player)
     player.components.locomotor:SetExternalSpeedMultiplier(player, "speedmeup", GetModConfigData("sprintSpeed"))
@@ -14,58 +16,97 @@ local function revertSprint(player)
     player.components.hunger:SetRate(initialHungerRate / GetModConfigData("hungerDrain"))
 end
 
-AddModRPCHandler(modname, "dsiRemoteSprint", function(player, modVersion)
-    sprint(player)
+local function complainWhenTooHungry(player)
+    local currentPlayerStatus = playerStatus[player]
+    if currentPlayerStatus.isAbleToComplain == 1 then
+        currentPlayerStatus.isAbleToComplain = 0
+        player.components.talker:Say("I'm too hungry to sprint")
+        player:DoTaskInTime(10, function()
+            currentPlayerStatus.isAbleToComplain = 1
+        end)
+    end
+end
+
+checkAndChangeSprint = function(player, isKeyHeldNew)
+    local currentPlayerStatus = playerStatus[player]
+    if isKeyHeldNew ~= nil then
+        currentPlayerStatus.isKeyHeld = isKeyHeldNew
+    end
+    if currentPlayerStatus.isSprinting == 1 and player.components.hunger:GetPercent() * 100 < hungerThreshold then
+        currentPlayerStatus.isSprinting = 0
+        revertSprint(player)
+        complainWhenTooHungry(player)
+    end
+    print('player, isekeyheld,ismoving,isprinting', player, currentPlayerStatus.isKeyHeld, currentPlayerStatus.isMoving,
+        currentPlayerStatus.isSprinting)
+
+    if currentPlayerStatus and currentPlayerStatus.isSprinting == 1 then
+        print('is currently sprinting and player, isekeyheld,ismoving,isprinting', player,
+            currentPlayerStatus.isKeyHeld, currentPlayerStatus.isMoving, currentPlayerStatus.isSprinting)
+    end
+    if currentPlayerStatus and currentPlayerStatus.isKeyHeld == 1 and currentPlayerStatus.isMoving == 1 and
+        currentPlayerStatus.isSprinting == 0 then
+        print('hunger level', player.components.hunger:GetPercent())
+        if player.components.hunger:GetPercent() * 100 >= hungerThreshold then
+            currentPlayerStatus.isSprinting = 1
+            print('calling sprint server side')
+            sprint(player)
+            return
+        end
+        complainWhenTooHungry(player)
+    elseif currentPlayerStatus and (currentPlayerStatus.isKeyHeld == 0 or currentPlayerStatus.isMoving == 0) and
+        currentPlayerStatus.isSprinting == 1 then
+        print(player, 'revertSprint Called')
+        currentPlayerStatus.isSprinting = 0
+        print('calling unpsprint server side')
+        revertSprint(player)
+    end
+end
+
+local function onLocomote(player)
+    print(player.components.locomotor.isrunning, "onLocomote")
+    if player.components.locomotor.isrunning then
+        playerStatus[player].isMoving = 1
+    else
+        playerStatus[player].isMoving = 0
+    end
+    checkAndChangeSprint(player, nil)
+
+end
+
+AddModRPCHandler(modname, "checkAndChangeSprint", checkAndChangeSprint)
+
+AddPlayerPostInit(function(player)
+    print('player is ', player)
+    playerStatus[player] = {
+        isKeyHeld = 0,
+        isMoving = 0,
+        isSprinting = 0,
+        isAbleToComplain = 1
+    }
+    player:ListenForEvent('locomote', onLocomote)
 end)
 
-AddModRPCHandler(modname, "dsiRemoteRevertSprint", function(player, modVersion)
-    revertSprint(player)
-end)
-
---- Key pressed - begin sprinting.
+-- Key pressed.
 G.TheInput:AddKeyDownHandler(sprintKey, function()
+    print(G.ThePlayer.components.locomotor.isrunning, "locomotor from keydown")
+    print('we made it in keydown')
     if not (G.TheFrontEnd:GetActiveScreen() and G.TheFrontEnd:GetActiveScreen().name and
         type(G.TheFrontEnd:GetActiveScreen().name) == "string" and G.TheFrontEnd:GetActiveScreen().name == "HUD") then
         return
     end
-
-    local modVersion = G.KnownModIndex:GetModInfo(modname).version
-
-    -- Server-side
-    if G.TheNet:GetIsServer() then
-        if (isSprinting == 0) then
-            isSprinting = 1
-            sprint(G.ThePlayer)
-        end
-        -- Client-side
-    else
-        if (isSprinting == 0) then
-            isSprinting = 1
-            SendModRPCToServer(MOD_RPC[modname]["dsiRemoteSprint"], modVersion)
-        end
-    end
+    print("keydown calling checkAndChangeSprint")
+    SendModRPCToServer(MOD_RPC[modname]["checkAndChangeSprint"], 1)
 end)
 
---- Key released - stop sprinting.
+--- Key released.
 G.TheInput:AddKeyUpHandler(sprintKey, function()
+    print(G.ThePlayer.components.locomotor.isrunning, "locomotor from keyup")
+    print('we made it in keyup')
     if not (G.TheFrontEnd:GetActiveScreen() and G.TheFrontEnd:GetActiveScreen().name and
         type(G.TheFrontEnd:GetActiveScreen().name) == "string" and G.TheFrontEnd:GetActiveScreen().name == "HUD") then
         return
     end
-    local modVersion = G.KnownModIndex:GetModInfo(modname).version
-
-    -- Server-side
-    if G.TheNet:GetIsServer() then
-        if (isSprinting == 1) then
-            isSprinting = 0
-            revertSprint(G.ThePlayer)
-        end
-        --- Client-side
-    else
-        if (isSprinting == 1) then
-            isSprinting = 0
-            SendModRPCToServer(MOD_RPC[modname]["dsiRemoteRevertSprint"], modVersion)
-        end
-
-    end
+    print("keyup calling checkAndChangeSprint")
+    SendModRPCToServer(MOD_RPC[modname]["checkAndChangeSprint"], 0)
 end)
