@@ -1,7 +1,7 @@
 name = "Let me sprint!"
 description = "Hold LSHIFT (Configurable) to sprint at the cost of increased hunger drain"
 author = "Dilathekila"
-version = "2.0.0"
+version = "2.0.2"
 
 forumthread = ""
 
@@ -23,8 +23,8 @@ icon_atlas = "preview.xml"
 icon = "preview.tex"
 
 local keys = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U",
-              "V", "W", "X", "Y", "Z", "TAB", "LSHIFT", "CAPSLOCK", "LALT", "LCTRL", "BACKSPACE", "PERIOD", "SLASH",
-              "TILDE"}
+              "V", "W", "X", "Y", "Z", "TAB", "LSHIFT", "RSHIFT", "CAPSLOCK", "LALT", "LCTRL", "BACKSPACE", "PERIOD",
+              "SLASH", "TILDE"}
 
 configuration_options = {{
     name = "sprintBind",
